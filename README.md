@@ -4,9 +4,9 @@ A repository with a few concepts of Compiler Design.
 > Please prefer using a linux based OS for execution of `lex` based programs.
 
 ## Table of Contents
-[Generic Commands](#Generic-terminal-Commands)
-[Token Separation](#Token-Separation)
-[Token Count](#Token-Count)
+1. [Generic Commands](#Generic-terminal-Commands)
+2. [Token Separation](#Token-Separation)
+3. [Token Count](#Token-Count)  
 
 ## Generic terminal Commands
 > These are commands generic to the codes in the repository. Any special commands would be added to their respective project headings.
