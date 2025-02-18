@@ -6,7 +6,8 @@ A repository with a few concepts of Compiler Design.
 ## Table of Contents
 1. [Generic Commands](#Generic-terminal-Commands)
 2. [Token Separation](#Token-Separation)
-3. [Token Count](#Token-Count)  
+3. [Token Count](#Token-Count)
+4. [DFA](#Siulation-of-DFA)
 
 ## Generic terminal Commands
 > These are commands generic to the codes in the repository. Any special commands would be added to their respective project headings.
@@ -27,3 +28,6 @@ A repository with a few concepts of Compiler Design.
 - `token_num.l` contains the code to output the number of tokens.
 - `token_num2.l` file outputs both the separated tokens and the total number as well.
 - Use the commands above for running.
+
+## Simulation of DFA
+- 
