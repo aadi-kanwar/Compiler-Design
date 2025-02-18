@@ -7,7 +7,7 @@ A repository with a few concepts of Compiler Design.
 1. [Generic Commands](#Generic-terminal-Commands)
 2. [Token Separation](#Token-Separation)
 3. [Token Count](#Token-Count)
-4. [DFA](#Siulation-of-DFA)
+4. [DFA](#Simulation-of-DFA)
 
 ## Generic terminal Commands
 > These are commands generic to the codes in the repository. Any special commands would be added to their respective project headings.
