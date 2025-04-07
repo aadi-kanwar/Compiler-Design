@@ -1,0 +1,382 @@
+EXP 1 : Token Separation
+%{
+%}
+%%
+[0-9]+[.][0-9]+ printf("%s is a floating number\n",yytext);
+int|float|char|double|void printf("%s is a datatype\n",yytext);
+[0-9]+ printf("%s is an integer number\n",yytext);
+[a-z]+[()] printf("%s is a function\n",yytext);
+[a-z]+ printf("%s is an identifier\n",yytext);
+[+=*/-] printf("%s is an operator\n",yytext);
+, printf("%s is a spearator\n",yytext);
+; printf("%s is a delimeter\n",yytext);
+
+[#][a-z\.h]+ printf("%s is a preprocessor\n",yytext);
+%%
+
+int yywrap(void)
+{
+	return 1;
+}
+
+int main()
+{
+	//reads input from a file named test.c rather than terminal
+	freopen("test.c","r",stdin);
+		yylex();
+		return 0;
+}
+ 
+>> test.c
+#include<stdio.h>
+#include<stdlib.h>
+void main()
+{
+	int a = 5, b = 3;
+	int sum = a + b;
+	printf("%d",sum);
+}
+
+
+
+Experiment 2. Write a program to scan the input program and generate a symbol table.
+%{
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+struct Identifier {
+    char name[50];
+    char type[20];
+};
+struct Identifier id_table[100];
+int id_count = 0;
+void add_identifier(char *name, char *type) {
+    for (int i = 0; i < id_count; i++) {
+        if (strcmp(id_table[i].name, name) == 0) {
+            return;
+        }
+    }
+    strcpy(id_table[id_count].name, name);
+    strcpy(id_table[id_count].type, type);
+    id_count++;
+}
+void print_table() {
+    printf("Identifier Table:\n");
+    printf("| %-20s | %-10s |\n", "Identifier", "Type");
+    printf("|----------------------|------------|\n");
+    for (int i = 0; i < id_count; i++) {
+        printf("| %-20s | %-10s |\n", id_table[i].name, id_table[i].type);
+    }
+}
+void yyerror(const char *s) {
+    fprintf(stderr, "Error: %s\n", s);
+}
+%}
+
+%%
+[ \t\n]+               ;
+int|float|char|double   { add_identifier(yytext, "Primitive Type"); }
+[a-zA-Z_][a-zA-Z0-9_]* { add_identifier(yytext, "Identifier"); }
+[0-9][a-zA-Z0-9_]* { 
+    printf("Error: Invalid identifier '%s'. It must start with a letter or an underscore.\n", yytext);
+}
+[^a-zA-Z0-9_]+ { }
+%%
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
+    yyin = fopen(argv[1], "r");
+    if (!yyin) {
+        perror("Failed to open file");
+        return 1;
+    }
+    yylex();
+    print_table();
+    return 0;
+}
+
+
+Exp 3: Write the lex and yacc program to simulate the working of Deterministic Finite Automata (DFA)  
+%{	//Yacc Code:
+#include <stdio.h>
+#include <stdlib.h>
+int yylex();
+void yyerror(char *s) { printf("Error: %s\n", s);  }
+%}
+%token 'a'
+%token 'b'
+%%
+input:
+/*space*/ | input string                 
+    { if ($2 == 2) 
+            printf("Valid string (ends with 'ab')\n");
+        else 
+            printf("Invalid string (does not end with 'ab')\n");     };
+string:
+    { $$ = 0; } // Starting state q0
+    | string 'a' { $$ = ($1 == 0 || $1 == 1) ? 1 : 0; }   
+    | string 'b' { $$ = ($1 == 1) ? 2 : 0; }   
+    ;
+%%
+int main() {
+    printf("Enter a string:\n");
+    yyparse();
+    return 0;
+}
+
+Lex Code:
+%{		// 
+#include "y.tab.h"
+%}
+%%
+a           { return 'a'; }
+b           { return 'b'; }
+.           { return yytext[0]; }
+%%
+int yywrap() {
+    return 1;
+}
+
+
+Exp 4: Token Separation using C
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#define MAX_LEN 100
+// List of C keywords
+const char *keywords[] = {
+    "int", "float", "double", "char", "return", "if", "else", 
+    "while", "for", "void", "break", "continue"
+};
+// Function to check if a string is a keyword
+int isKeyword(char *str) {
+    for (int i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
+        if (strcmp(str, keywords[i]) == 0) {
+            return 1;                                 // It's a keyword
+        }
+    }
+    return 0;                                         // Not a keyword
+}
+
+// Function to check if a string is a valid identifier
+int isIdentifier(char *str) {
+    if (!isalpha(str[0]) && str[0] != '_') {
+        return 0;              // Identifiers must start with a letter or underscore
+    }
+    for (int i = 1; str[i] != '\0'; i++) {
+        if (!isalnum(str[i]) && str[i] != '_') {
+            return 0;          // Identifiers can only contain letters, digits, and underscores
+        }
+    }
+    return 1;
+}
+// Function to classify and print tokens
+void classifyToken(char *token) {
+    if (isKeyword(token)) {
+        printf("Keyword: %s\n", token);
+    } else if (isIdentifier(token)) {
+        printf("Identifier: %s\n", token);
+ 
+    } else if (strchr("+-*/%=<>!&|^~", token[0]) != NULL) {
+        printf("Operator: %s\n", token);
+    } else if (strchr("()[]{};,.#", token[0]) != NULL) {
+        printf("Punctuation: %s\n", token);
+    } else {
+        printf("Unknown Token: %s\n", token);
+    }
+}
+
+// Function to tokenize and classify the input
+void tokenize(char *str) {
+    char *token = strtok(str, " \t\n\r");    // Split the string by spaces, tabs, or newlines
+    while (token != NULL) {
+        classifyToken(token);
+        token = strtok(NULL, " \t\n\r");               // Get the next token
+    }
+}
+
+int main() {
+    char input[MAX_LEN];
+    printf("Enter a C code snippet: ");
+    fgets(input, MAX_LEN, stdin);                 // Read input from the user
+    tokenize(input);                                // Process and classify tokens
+    return 0;
+}
+
+
+Exp 5: Write a Lex and Yacc Program to simulate Predictive Parser.
+
+Yacc Code:
+%{
+#include <stdio.h>
+#include <stdlib.h>
+void yyerror(const char *s);
+int yylex();
+%}
+%token NUMBER
+%%
+E  : T Ep { printf("Reduced: E -> T Ep\n"); } ;
+Ep : '+' T Ep { printf("Reduced: Ep -> + T Ep\n"); }
+   | '-' T Ep { printf("Reduced: Ep -> - T Ep\n"); }
+   | /* epsilon */ { printf("Reduced: Ep -> ε\n"); } ;
+T  : F Tp { printf("Reduced: T -> F Tp\n"); } ;
+Tp : '*' F Tp { printf("Reduced: Tp -> * F Tp\n"); }
+   | '/' F Tp { printf("Reduced: Tp -> / F Tp\n"); }
+   | /* epsilon */ { printf("Reduced: Tp -> ε\n"); } ;
+F  : '(' E ')' { printf("Reduced: F -> (E)\n"); }
+   | NUMBER { printf("Reduced: F -> NUMBER\n"); } ;
+%%
+void yyerror(const char *s) {
+    printf("Syntax Error: %s\n", s);
+}
+
+int main() {
+    printf("Enter an expression:\n");
+    if (yyparse() == 0)
+        printf("Parsing successful!\n");
+    else
+        printf("Parsing failed!\n");
+    return 0;
+}
+ 
+
+Lex code:
+%{
+#include "y.tab.h"
+%}
+%%
+[0-9]+    { yylval = atoi(yytext); return NUMBER; }
+[+\-]    { return *yytext; }
+[*\/]     { return *yytext; }
+\(        { return '('; }
+\)        { return ')'; }
+\n        { return 0; }  
+[ \t]     { /* Ignore spaces */ }
+.         { printf("Invalid character: %s\n", yytext); }
+%
+
+
+Exp 6: Write Lex and Yacc Program to evaluate arithmetic expression.
+Lex code
+%{
+#include "y.tab.h" 
+extern yylval;
+%}
+%%
+[0-9]+ {yylval=atoi(yytext);return num;}
+ [\+\-\*\/] {return yytext[0];}
+[)] {return yytext[0];}
+[(] {return yytext[0];}
+. {;}
+\n {return 0;}
+%%
+
+Yacc code
+%{
+#include<stdio.h> 
+#include<stdlib.h>
+%}
+%token num
+%left '+''-'
+%left '*''/'
+%%
+input:exp {printf("%d\n",$$);exit(0);} 
+exp:exp'+'exp {$$=$1+$3;}
+|exp'-'exp {$$=$1-$3;}
+|exp'*'exp {$$=$1*$3;}
+|exp'/'exp {if($3==0){printf("Division by zero exception\n");exit(0);} 
+else
+$$=$1/$3;}
+|'('exp')' {$$=$2;}
+|num {$$=$1;};
+%%
+int yyerror()
+{	printf("error"); 
+exit(0);    }
+int main()
+{	printf("Enter the expression:\n"); 
+yyparse();	}
+
+
+Experiment No. 7-:  Simulation of Shift Reduce Parser using C
+
+#include <stdio.h>
+#include <string.h>
+struct ProductionRule
+{
+    char left[10];
+    char right[10];
+};
+int main()
+{  char input[20], stack[50], temp[50], ch[2], *token1, *token2, *substring;
+    int i, j, stack_length, substring_length, stack_top, rule_count = 0;
+    struct ProductionRule rules[10];
+    stack[0] = '\0';
+    printf("\nEnter the number of production rules: ");
+    scanf("%d", &rule_count);
+    printf("\nEnter the production rules (in the form 'left->right'): \n");
+    for (i = 0; i < rule_count; i++)
+    {  scanf("%s", temp);
+        token1 = strtok(temp, "->");
+        token2 = strtok(NULL, "->");
+        strcpy(rules[i].left, token1);
+        strcpy(rules[i].right, token2);
+    }
+    printf("\nEnter the input string: ");
+    scanf("%s", input);
+    i = 0;
+    while (1)
+    {
+        if (i < strlen(input))
+        {  ch[0] = input[i];
+            ch[1] = '\0';
+            i++;
+            strcat(stack, ch);
+            printf("%s\t", stack);
+            for (int k = i; k < strlen(input); k++)
+                printf("%c", input[k]);
+            printf("\tShift %s\n", ch);
+        }
+
+ 
+        // Iterate through the production rules
+        for (j = 0; j < rule_count; j++)
+        {  // Check if the right-hand side of the production rule 
+matches a substring in the stack
+            substring = strstr(stack, rules[j].right);
+            if (substring != NULL)
+            {  stack_length = strlen(stack);
+                substring_length = strlen(substring);
+                stack_top = stack_length - substring_length;
+                stack[stack_top] = '\0';
+                strcat(stack, rules[j].left);
+                printf("%s\t", stack);
+                for (int k = i; k < strlen(input); k++)
+                    printf("%c", input[k]);
+                printf("\tReduce %s->%s\n", rules[j].left, rules[j].right);
+                j = -1; // Restart the loop to ensure immediate reduction of the 
+                  newly derived production rule
+            }
+        }
+  // Check if the stack contains only the start symbol and if the entire 
+      input string has been processed
+        if (strcmp(stack, rules[0].left) == 0 && i == strlen(input))
+        {
+            printf("\nAccepted");
+            break;
+        }
+
+        // Check if the entire input string has been processed but the 
+            stack doesn't match the start symbol
+        if (i == strlen(input))
+        {
+            printf("\nNot Accepted");
+            break;
+        }
+    }
+    return 0;
+}
